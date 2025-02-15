@@ -19,7 +19,7 @@ class CustomUserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, username, email, phone, password=None):
+    def create_superuser(self, username, email, phone=0000000000, password=None):
         user = self.create_user(username, email, phone, password)
         user.is_admin = True
         user.is_staff = True
@@ -70,7 +70,7 @@ class Day(models.Model):
 
 class Route(models.Model):
     destination = models.CharField(max_length=255)
-    country = models.ForeignKey(Country, on_delete=models.CASCADE, default=1)
+    country = models.ForeignKey(Country, on_delete=models.SET_NULL, null=True, blank=True)
     price = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
 
     def __str__(self):

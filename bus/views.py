@@ -168,6 +168,7 @@ class BookingViewSet(viewsets.ModelViewSet):
         )
 class RouteViewSet(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
+
     def list(self, request):
         countries = Country.objects.prefetch_related('route_set__timings__days').all()
         data = {}
@@ -177,21 +178,25 @@ class RouteViewSet(viewsets.ModelViewSet):
             data[country_name] = []
 
             for route in country.route_set.all():
-                route_data = {
-                    "destination": route.destination,
-                    "days": [],
-                    "times": [],
-                    "price": route.price
-                }
+                # Dictionary to group times by their corresponding days
+                days_times_map = {}
 
                 for timing in route.timings.all():
-                    route_data["times"].append(timing.time.strftime("%H:%M"))  # Format time
+                    time_str = timing.time.strftime("%H:%M")  # Convert time to string
                     for day in timing.days.all():
-                        if day.name not in route_data["days"]:
-                            route_data["days"].append(day.name)
+                        if day.name not in days_times_map:
+                            days_times_map[day.name] = []
+                        days_times_map[day.name].append(time_str)
+
+                # Format data to match the required structure
+                route_data = {
+                    "destination": route.destination,
+                    "days": list(days_times_map.keys()),  # Extract unique days
+                    "times": list({time for times in days_times_map.values() for time in times}),  # Unique times
+                    "schedule": [{ "day": day, "times": times } for day, times in days_times_map.items()],  # List of days with times
+                    "price": route.price
+                }
 
                 data[country_name].append(route_data)
 
         return Response(data)
-    
-    
