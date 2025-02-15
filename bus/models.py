@@ -44,8 +44,9 @@ class Booking(models.Model):
     destination = models.CharField(max_length=255)
     date = models.DateField()
     time = models.TimeField()
-    adults = models.PositiveIntegerField()
-    children = models.PositiveIntegerField()
+    adults = models.PositiveIntegerField(default=0)
+    children = models.PositiveIntegerField(default=0)
+    students = models.PositiveIntegerField(default=0)
     price = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
     created_at = models.DateTimeField(auto_now_add=True)
 

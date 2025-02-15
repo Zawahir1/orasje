@@ -11,8 +11,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = ['id', 'username', 'email', 'phone']
-        
-        
+
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=6)
 
@@ -21,30 +20,31 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = ['username', 'email', 'phone', 'password']
 
     def create(self, validated_data):
-        user = CustomUser.objects.create_user(**validated_data)  # Uses `create_user` method
-        return user
+        return self.Meta.model.objects.create_user(**validated_data)
 
 class LoginSerializer(TokenObtainPairSerializer):
-    username = serializers.CharField()  # Accept email or username
+    username = serializers.CharField()  # Accepts email or username
     password = serializers.CharField(write_only=True)
 
     def validate(self, attrs):
         username_or_email = attrs.get("username")  # Can be username or email
         password = attrs.get("password")
 
-        # Try to find user by email
-        try:
-            user = User.objects.get(email=username_or_email)
+        user = CustomUser.objects.filter(email=username_or_email).first()
+        if user:
             username_or_email = user.username  # Convert email to username
-        except User.DoesNotExist:
-            pass  # If not found by email, assume it's a username
 
         user = authenticate(username=username_or_email, password=password)
 
         if not user:
-            raise serializers.ValidationError("Invalid credentials")
+            raise serializers.ValidationError({"error": "Invalid credentials"})
 
-        return super().validate(attrs)
+        tokens = super().validate(attrs)
+        return {
+            "user": UserSerializer(user).data,
+            "access": tokens["access"],
+            "refresh": tokens["refresh"]
+        }
         
 class BookingSerializer(serializers.ModelSerializer):
     class Meta:
